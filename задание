@@ -1,0 +1,1088 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 132,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import pandas as pd\n",
+    "from scipy.stats import spearmanr\n",
+    "from scipy.stats import pearsonr"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "pycharm": {
+     "name": "#%% md\n"
+    }
+   },
+   "source": [
+    "#  Перед вами набор данных с описаниями химических свойств стекла\n",
+    "\n",
+    "Взять его можно вот тут: https://gist.github.com/hydrophis-spiralis/8899e6a3b49deeb2440c42adeb1fc18e\n",
+    "\n",
+    "Столбцы кроме последнего - нюансы химического состава.\n",
+    "Последний столбец Type - тип стекла."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 119,
+   "metadata": {
+    "collapsed": false,
+    "jupyter": {
+     "outputs_hidden": false
+    },
+    "pycharm": {
+     "name": "#%%\n"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>RI</th>\n",
+       "      <th>Na</th>\n",
+       "      <th>Mg</th>\n",
+       "      <th>Al</th>\n",
+       "      <th>Si</th>\n",
+       "      <th>K</th>\n",
+       "      <th>Ca</th>\n",
+       "      <th>Ba</th>\n",
+       "      <th>Fe</th>\n",
+       "      <th>Type</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>1.52101</td>\n",
+       "      <td>13.64</td>\n",
+       "      <td>4.49</td>\n",
+       "      <td>1.10</td>\n",
+       "      <td>71.78</td>\n",
+       "      <td>0.06</td>\n",
+       "      <td>8.75</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>buildingwindowsfloatprocessed</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>1.51761</td>\n",
+       "      <td>13.89</td>\n",
+       "      <td>3.60</td>\n",
+       "      <td>1.36</td>\n",
+       "      <td>72.73</td>\n",
+       "      <td>0.48</td>\n",
+       "      <td>7.83</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>buildingwindowsfloatprocessed</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>1.51618</td>\n",
+       "      <td>13.53</td>\n",
+       "      <td>3.55</td>\n",
+       "      <td>1.54</td>\n",
+       "      <td>72.99</td>\n",
+       "      <td>0.39</td>\n",
+       "      <td>7.78</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>buildingwindowsfloatprocessed</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>1.51766</td>\n",
+       "      <td>13.21</td>\n",
+       "      <td>3.69</td>\n",
+       "      <td>1.29</td>\n",
+       "      <td>72.61</td>\n",
+       "      <td>0.57</td>\n",
+       "      <td>8.22</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>buildingwindowsfloatprocessed</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>1.51742</td>\n",
+       "      <td>13.27</td>\n",
+       "      <td>3.62</td>\n",
+       "      <td>1.24</td>\n",
+       "      <td>73.08</td>\n",
+       "      <td>0.55</td>\n",
+       "      <td>8.07</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>buildingwindowsfloatprocessed</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "        RI     Na    Mg    Al     Si     K    Ca   Ba   Fe  \\\n",
+       "0  1.52101  13.64  4.49  1.10  71.78  0.06  8.75  0.0  0.0   \n",
+       "1  1.51761  13.89  3.60  1.36  72.73  0.48  7.83  0.0  0.0   \n",
+       "2  1.51618  13.53  3.55  1.54  72.99  0.39  7.78  0.0  0.0   \n",
+       "3  1.51766  13.21  3.69  1.29  72.61  0.57  8.22  0.0  0.0   \n",
+       "4  1.51742  13.27  3.62  1.24  73.08  0.55  8.07  0.0  0.0   \n",
+       "\n",
+       "                            Type  \n",
+       "0  buildingwindowsfloatprocessed  \n",
+       "1  buildingwindowsfloatprocessed  \n",
+       "2  buildingwindowsfloatprocessed  \n",
+       "3  buildingwindowsfloatprocessed  \n",
+       "4  buildingwindowsfloatprocessed  "
+      ]
+     },
+     "execution_count": 119,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df = pd.read_csv('glass.csv').copy()\n",
+    "df.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "pycharm": {
+     "name": "#%% md\n"
+    }
+   },
+   "source": [
+    "# 1. Сколько образцов разных видов стекла в таблице?"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 133,
+   "metadata": {
+    "collapsed": false,
+    "jupyter": {
+     "outputs_hidden": false
+    },
+    "pycharm": {
+     "name": "#%%\n"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Образцов разных видов стекла в таблице:\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "214"
+      ]
+     },
+     "execution_count": 133,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "print('Образцов разных видов стекла в таблице:')\n",
+    "len(df)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "pycharm": {
+     "name": "#%% md\n"
+    }
+   },
+   "source": [
+    "# 2. Найдите средние значения химических параметров для каждого типа стекла"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 43,
+   "metadata": {
+    "collapsed": false,
+    "jupyter": {
+     "outputs_hidden": false
+    },
+    "pycharm": {
+     "name": "#%%\n"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>RI</th>\n",
+       "      <th>Na</th>\n",
+       "      <th>Mg</th>\n",
+       "      <th>Al</th>\n",
+       "      <th>Si</th>\n",
+       "      <th>K</th>\n",
+       "      <th>Ca</th>\n",
+       "      <th>Ba</th>\n",
+       "      <th>Fe</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Type</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>buildingwindowsfloatprocessed</th>\n",
+       "      <td>1.518718</td>\n",
+       "      <td>13.242286</td>\n",
+       "      <td>3.552429</td>\n",
+       "      <td>1.163857</td>\n",
+       "      <td>72.619143</td>\n",
+       "      <td>0.447429</td>\n",
+       "      <td>8.797286</td>\n",
+       "      <td>0.012714</td>\n",
+       "      <td>0.057000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>buildingwindowsnonfloatprocessed</th>\n",
+       "      <td>1.518619</td>\n",
+       "      <td>13.111711</td>\n",
+       "      <td>3.002105</td>\n",
+       "      <td>1.408158</td>\n",
+       "      <td>72.598026</td>\n",
+       "      <td>0.521053</td>\n",
+       "      <td>9.073684</td>\n",
+       "      <td>0.050263</td>\n",
+       "      <td>0.079737</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>containers</th>\n",
+       "      <td>1.518928</td>\n",
+       "      <td>12.827692</td>\n",
+       "      <td>0.773846</td>\n",
+       "      <td>2.033846</td>\n",
+       "      <td>72.366154</td>\n",
+       "      <td>1.470000</td>\n",
+       "      <td>10.123846</td>\n",
+       "      <td>0.187692</td>\n",
+       "      <td>0.060769</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>headlamps</th>\n",
+       "      <td>1.517116</td>\n",
+       "      <td>14.442069</td>\n",
+       "      <td>0.538276</td>\n",
+       "      <td>2.122759</td>\n",
+       "      <td>72.965862</td>\n",
+       "      <td>0.325172</td>\n",
+       "      <td>8.491379</td>\n",
+       "      <td>1.040000</td>\n",
+       "      <td>0.013448</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>tableware</th>\n",
+       "      <td>1.517456</td>\n",
+       "      <td>14.646667</td>\n",
+       "      <td>1.305556</td>\n",
+       "      <td>1.366667</td>\n",
+       "      <td>73.206667</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>9.356667</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>0.000000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>vehiclewindowsfloatprocessed</th>\n",
+       "      <td>1.517964</td>\n",
+       "      <td>13.437059</td>\n",
+       "      <td>3.543529</td>\n",
+       "      <td>1.201176</td>\n",
+       "      <td>72.404706</td>\n",
+       "      <td>0.406471</td>\n",
+       "      <td>8.782941</td>\n",
+       "      <td>0.008824</td>\n",
+       "      <td>0.057059</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                                        RI         Na        Mg        Al  \\\n",
+       "Type                                                                        \n",
+       "buildingwindowsfloatprocessed     1.518718  13.242286  3.552429  1.163857   \n",
+       "buildingwindowsnonfloatprocessed  1.518619  13.111711  3.002105  1.408158   \n",
+       "containers                        1.518928  12.827692  0.773846  2.033846   \n",
+       "headlamps                         1.517116  14.442069  0.538276  2.122759   \n",
+       "tableware                         1.517456  14.646667  1.305556  1.366667   \n",
+       "vehiclewindowsfloatprocessed      1.517964  13.437059  3.543529  1.201176   \n",
+       "\n",
+       "                                         Si         K         Ca        Ba  \\\n",
+       "Type                                                                         \n",
+       "buildingwindowsfloatprocessed     72.619143  0.447429   8.797286  0.012714   \n",
+       "buildingwindowsnonfloatprocessed  72.598026  0.521053   9.073684  0.050263   \n",
+       "containers                        72.366154  1.470000  10.123846  0.187692   \n",
+       "headlamps                         72.965862  0.325172   8.491379  1.040000   \n",
+       "tableware                         73.206667  0.000000   9.356667  0.000000   \n",
+       "vehiclewindowsfloatprocessed      72.404706  0.406471   8.782941  0.008824   \n",
+       "\n",
+       "                                        Fe  \n",
+       "Type                                        \n",
+       "buildingwindowsfloatprocessed     0.057000  \n",
+       "buildingwindowsnonfloatprocessed  0.079737  \n",
+       "containers                        0.060769  \n",
+       "headlamps                         0.013448  \n",
+       "tableware                         0.000000  \n",
+       "vehiclewindowsfloatprocessed      0.057059  "
+      ]
+     },
+     "execution_count": 43,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mean_types = df.groupby('Type').mean()\n",
+    "mean_types"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "pycharm": {
+     "name": "#%% md\n"
+    }
+   },
+   "source": [
+    "# 3. Найдите максимальную разницу между содержанием Si разных типов стекла. Постройте квадратную таблицу, в которой столбцы и строки - типы стекла, а в ячейках будут находиться значения абсолютной разницы."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 51,
+   "metadata": {
+    "collapsed": false,
+    "jupyter": {
+     "outputs_hidden": false
+    },
+    "pycharm": {
+     "name": "#%%\n"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Максимальная разница между содержанием Si разных типов стекла: 0.8405128205128136\n"
+     ]
+    },
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>buildingwindowsfloatprocessed</th>\n",
+       "      <th>buildingwindowsnonfloatprocessed</th>\n",
+       "      <th>vehiclewindowsfloatprocessed</th>\n",
+       "      <th>containers</th>\n",
+       "      <th>tableware</th>\n",
+       "      <th>headlamps</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>buildingwindowsfloatprocessed</th>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>0.021117</td>\n",
+       "      <td>0.214437</td>\n",
+       "      <td>0.252989</td>\n",
+       "      <td>0.587524</td>\n",
+       "      <td>0.346719</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>buildingwindowsnonfloatprocessed</th>\n",
+       "      <td>0.021117</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>0.193320</td>\n",
+       "      <td>0.231872</td>\n",
+       "      <td>0.608640</td>\n",
+       "      <td>0.367836</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>vehiclewindowsfloatprocessed</th>\n",
+       "      <td>0.214437</td>\n",
+       "      <td>0.193320</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>0.038552</td>\n",
+       "      <td>0.801961</td>\n",
+       "      <td>0.561156</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>containers</th>\n",
+       "      <td>0.252989</td>\n",
+       "      <td>0.231872</td>\n",
+       "      <td>0.038552</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>0.840513</td>\n",
+       "      <td>0.599708</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>tableware</th>\n",
+       "      <td>0.587524</td>\n",
+       "      <td>0.608640</td>\n",
+       "      <td>0.801961</td>\n",
+       "      <td>0.840513</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>0.240805</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>headlamps</th>\n",
+       "      <td>0.346719</td>\n",
+       "      <td>0.367836</td>\n",
+       "      <td>0.561156</td>\n",
+       "      <td>0.599708</td>\n",
+       "      <td>0.240805</td>\n",
+       "      <td>0.000000</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                                  buildingwindowsfloatprocessed  \\\n",
+       "buildingwindowsfloatprocessed                          0.000000   \n",
+       "buildingwindowsnonfloatprocessed                       0.021117   \n",
+       "vehiclewindowsfloatprocessed                           0.214437   \n",
+       "containers                                             0.252989   \n",
+       "tableware                                              0.587524   \n",
+       "headlamps                                              0.346719   \n",
+       "\n",
+       "                                  buildingwindowsnonfloatprocessed  \\\n",
+       "buildingwindowsfloatprocessed                             0.021117   \n",
+       "buildingwindowsnonfloatprocessed                          0.000000   \n",
+       "vehiclewindowsfloatprocessed                              0.193320   \n",
+       "containers                                                0.231872   \n",
+       "tableware                                                 0.608640   \n",
+       "headlamps                                                 0.367836   \n",
+       "\n",
+       "                                  vehiclewindowsfloatprocessed  containers  \\\n",
+       "buildingwindowsfloatprocessed                         0.214437    0.252989   \n",
+       "buildingwindowsnonfloatprocessed                      0.193320    0.231872   \n",
+       "vehiclewindowsfloatprocessed                          0.000000    0.038552   \n",
+       "containers                                            0.038552    0.000000   \n",
+       "tableware                                             0.801961    0.840513   \n",
+       "headlamps                                             0.561156    0.599708   \n",
+       "\n",
+       "                                  tableware  headlamps  \n",
+       "buildingwindowsfloatprocessed      0.587524   0.346719  \n",
+       "buildingwindowsnonfloatprocessed   0.608640   0.367836  \n",
+       "vehiclewindowsfloatprocessed       0.801961   0.561156  \n",
+       "containers                         0.840513   0.599708  \n",
+       "tableware                          0.000000   0.240805  \n",
+       "headlamps                          0.240805   0.000000  "
+      ]
+     },
+     "execution_count": 51,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "table = pd.DataFrame(index=df.Type.unique(), columns=df.Type.unique())\n",
+    "diff = mean_types.Si.max() - mean_types.Si.min()\n",
+    "print('Максимальная разница между содержанием Si разных типов стекла: ' + str(diff))\n",
+    "for col in table:\n",
+    "    diffs = []\n",
+    "    for idx in table:\n",
+    "        diffs.append(abs(mean_types.Si[col] - mean_types.Si[idx]))\n",
+    "    table[col] = diffs\n",
+    "table"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "pycharm": {
+     "name": "#%% md\n"
+    }
+   },
+   "source": [
+    "# 4. Как часто Барий(Ba) используется(>0) вместе с Магнием(Mg)(>0)?"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 116,
+   "metadata": {
+    "collapsed": false,
+    "jupyter": {
+     "outputs_hidden": false
+    },
+    "pycharm": {
+     "name": "#%%\n"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "В 15 из всех 214 случаев используется Ba вместе с Mg, или в 7% случаев\n"
+     ]
+    }
+   ],
+   "source": [
+    "BaMg = df[(df.Ba > 0) & (df.Mg > 0)]\n",
+    "print('В {} из всех {} случаев используется Ba вместе с Mg, или в {}% случаев'.format(len(BaMg), len(df), round(len(BaMg)/len(df)*100)))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "pycharm": {
+     "name": "#%% md\n"
+    }
+   },
+   "source": [
+    "# 5. Правда ли, что в стекле, которое используют для посуды(tableware), в среднем меньше кальция(Ca), чем в стекле для окон(Тип начинается с building window)?"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 68,
+   "metadata": {
+    "collapsed": false,
+    "jupyter": {
+     "outputs_hidden": false
+    },
+    "pycharm": {
+     "name": "#%%\n"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "False\n",
+      "False\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(mean_types.Ca.tableware < mean_types.Ca.buildingwindowsfloatprocessed)\n",
+    "print(mean_types.Ca.tableware < mean_types.Ca.buildingwindowsnonfloatprocessed)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "pycharm": {
+     "name": "#%% md\n"
+    }
+   },
+   "source": [
+    "# 6. Ri - Refractive index - коэффициент преломления. Расположите другие химические параметры по убыванию корреляции с Ri. Попробуйте корреляции Пирсона и Спирмена."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 135,
+   "metadata": {
+    "collapsed": false,
+    "jupyter": {
+     "outputs_hidden": false
+    },
+    "pycharm": {
+     "name": "#%%\n"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "{'Na': 0.031039673411322587, 'Mg': 0.1441558576473802, 'Al': -0.4918214588177193, 'Si': -0.525732890324931, 'K': -0.28800126220173705, 'Ca': 0.7037772900856513, 'Ba': -0.18151106032822187, 'Fe': 0.09618105232126861}\n",
+      "Химические параметры по убыванию корреляции Спирмана с Ri:\n",
+      "['Ca', 'Mg', 'Fe', 'Na', 'Ba', 'K', 'Al', 'Si']\n",
+      "\n",
+      "\n",
+      "{'Na': -0.1918853790389022, 'Mg': -0.12227403932819352, 'Al': -0.40732603408139323, 'Si': -0.5420521997085237, 'K': -0.28983271114396064, 'Ca': 0.8104026963400859, 'Ba': -0.00038601891220613194, 'Fe': 0.14300960927755002}\n",
+      "Химические параметры по убыванию корреляции Пирсона с Ri:\n",
+      "['Ca', 'Fe', 'Ba', 'Mg', 'Na', 'K', 'Al', 'Si']\n"
+     ]
+    }
+   ],
+   "source": [
+    "RI_corrs_spearman = {}\n",
+    "RI_corrs_pearson = {}\n",
+    "for col in df.columns[1:-1]:\n",
+    "    corr_s, p_s = spearmanr(df.RI.values, df[col].values)\n",
+    "    RI_corrs_spearman[col] = corr_s\n",
+    "    \n",
+    "    corr_p, p_p = pearsonr(df.RI.values, df[col].values)\n",
+    "    RI_corrs_pearson[col] = corr_p\n",
+    "    \n",
+    "print(RI_corrs_spearman)\n",
+    "print('Химические параметры по убыванию корреляции Спирмана с Ri:')\n",
+    "print(sorted(RI_corrs_spearman, key=RI_corrs_spearman.get, reverse=True))\n",
+    "print('\\n')\n",
+    "print(RI_corrs_pearson)\n",
+    "print('Химические параметры по убыванию корреляции Пирсона с Ri:')\n",
+    "print(sorted(RI_corrs_pearson, key=RI_corrs_pearson.get, reverse=True))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "pycharm": {
+     "name": "#%% md\n"
+    }
+   },
+   "source": [
+    "# 7. Сколько образцов одновременно имеют Ri и Na больше медианной?"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 136,
+   "metadata": {
+    "collapsed": false,
+    "jupyter": {
+     "outputs_hidden": false
+    },
+    "pycharm": {
+     "name": "#%%\n"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Образцов одновременно имеют Ri и Na больше медианной:\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "61"
+      ]
+     },
+     "execution_count": 136,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "print('Образцов одновременно имеют Ri и Na больше медианной:')\n",
+    "len(df[(df.RI > df.RI.median()) & (df.Na > df.Na.median())])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "pycharm": {
+     "name": "#%% md\n"
+    }
+   },
+   "source": [
+    "# 8. Разделите типы стекол windows по подтипам, каждый отдельный подтип вынесите в отдельную колонку в виде индикатора. Например, если в столбце Type есть building, то добавить столбец building и для таких значений поставить 1, в иных случаях - 0."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 109,
+   "metadata": {
+    "pycharm": {
+     "name": "#%%\n"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>RI</th>\n",
+       "      <th>Na</th>\n",
+       "      <th>Mg</th>\n",
+       "      <th>Al</th>\n",
+       "      <th>Si</th>\n",
+       "      <th>K</th>\n",
+       "      <th>Ca</th>\n",
+       "      <th>Ba</th>\n",
+       "      <th>Fe</th>\n",
+       "      <th>Type</th>\n",
+       "      <th>building</th>\n",
+       "      <th>vehicle</th>\n",
+       "      <th>nonfloatprocessed</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>1.52101</td>\n",
+       "      <td>13.64</td>\n",
+       "      <td>4.49</td>\n",
+       "      <td>1.10</td>\n",
+       "      <td>71.78</td>\n",
+       "      <td>0.06</td>\n",
+       "      <td>8.75</td>\n",
+       "      <td>0.00</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>buildingwindowsfloatprocessed</td>\n",
+       "      <td>1</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>1.51761</td>\n",
+       "      <td>13.89</td>\n",
+       "      <td>3.60</td>\n",
+       "      <td>1.36</td>\n",
+       "      <td>72.73</td>\n",
+       "      <td>0.48</td>\n",
+       "      <td>7.83</td>\n",
+       "      <td>0.00</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>buildingwindowsfloatprocessed</td>\n",
+       "      <td>1</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>1.51618</td>\n",
+       "      <td>13.53</td>\n",
+       "      <td>3.55</td>\n",
+       "      <td>1.54</td>\n",
+       "      <td>72.99</td>\n",
+       "      <td>0.39</td>\n",
+       "      <td>7.78</td>\n",
+       "      <td>0.00</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>buildingwindowsfloatprocessed</td>\n",
+       "      <td>1</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>1.51766</td>\n",
+       "      <td>13.21</td>\n",
+       "      <td>3.69</td>\n",
+       "      <td>1.29</td>\n",
+       "      <td>72.61</td>\n",
+       "      <td>0.57</td>\n",
+       "      <td>8.22</td>\n",
+       "      <td>0.00</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>buildingwindowsfloatprocessed</td>\n",
+       "      <td>1</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>1.51742</td>\n",
+       "      <td>13.27</td>\n",
+       "      <td>3.62</td>\n",
+       "      <td>1.24</td>\n",
+       "      <td>73.08</td>\n",
+       "      <td>0.55</td>\n",
+       "      <td>8.07</td>\n",
+       "      <td>0.00</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>buildingwindowsfloatprocessed</td>\n",
+       "      <td>1</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>...</th>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>209</th>\n",
+       "      <td>1.51623</td>\n",
+       "      <td>14.14</td>\n",
+       "      <td>0.00</td>\n",
+       "      <td>2.88</td>\n",
+       "      <td>72.61</td>\n",
+       "      <td>0.08</td>\n",
+       "      <td>9.18</td>\n",
+       "      <td>1.06</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>headlamps</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>210</th>\n",
+       "      <td>1.51685</td>\n",
+       "      <td>14.92</td>\n",
+       "      <td>0.00</td>\n",
+       "      <td>1.99</td>\n",
+       "      <td>73.06</td>\n",
+       "      <td>0.00</td>\n",
+       "      <td>8.40</td>\n",
+       "      <td>1.59</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>headlamps</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>211</th>\n",
+       "      <td>1.52065</td>\n",
+       "      <td>14.36</td>\n",
+       "      <td>0.00</td>\n",
+       "      <td>2.02</td>\n",
+       "      <td>73.42</td>\n",
+       "      <td>0.00</td>\n",
+       "      <td>8.44</td>\n",
+       "      <td>1.64</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>headlamps</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>212</th>\n",
+       "      <td>1.51651</td>\n",
+       "      <td>14.38</td>\n",
+       "      <td>0.00</td>\n",
+       "      <td>1.94</td>\n",
+       "      <td>73.61</td>\n",
+       "      <td>0.00</td>\n",
+       "      <td>8.48</td>\n",
+       "      <td>1.57</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>headlamps</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>213</th>\n",
+       "      <td>1.51711</td>\n",
+       "      <td>14.23</td>\n",
+       "      <td>0.00</td>\n",
+       "      <td>2.08</td>\n",
+       "      <td>73.36</td>\n",
+       "      <td>0.00</td>\n",
+       "      <td>8.62</td>\n",
+       "      <td>1.67</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>headlamps</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>214 rows × 13 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "          RI     Na    Mg    Al     Si     K    Ca    Ba   Fe  \\\n",
+       "0    1.52101  13.64  4.49  1.10  71.78  0.06  8.75  0.00  0.0   \n",
+       "1    1.51761  13.89  3.60  1.36  72.73  0.48  7.83  0.00  0.0   \n",
+       "2    1.51618  13.53  3.55  1.54  72.99  0.39  7.78  0.00  0.0   \n",
+       "3    1.51766  13.21  3.69  1.29  72.61  0.57  8.22  0.00  0.0   \n",
+       "4    1.51742  13.27  3.62  1.24  73.08  0.55  8.07  0.00  0.0   \n",
+       "..       ...    ...   ...   ...    ...   ...   ...   ...  ...   \n",
+       "209  1.51623  14.14  0.00  2.88  72.61  0.08  9.18  1.06  0.0   \n",
+       "210  1.51685  14.92  0.00  1.99  73.06  0.00  8.40  1.59  0.0   \n",
+       "211  1.52065  14.36  0.00  2.02  73.42  0.00  8.44  1.64  0.0   \n",
+       "212  1.51651  14.38  0.00  1.94  73.61  0.00  8.48  1.57  0.0   \n",
+       "213  1.51711  14.23  0.00  2.08  73.36  0.00  8.62  1.67  0.0   \n",
+       "\n",
+       "                              Type  building  vehicle  nonfloatprocessed  \n",
+       "0    buildingwindowsfloatprocessed         1        0                  0  \n",
+       "1    buildingwindowsfloatprocessed         1        0                  0  \n",
+       "2    buildingwindowsfloatprocessed         1        0                  0  \n",
+       "3    buildingwindowsfloatprocessed         1        0                  0  \n",
+       "4    buildingwindowsfloatprocessed         1        0                  0  \n",
+       "..                             ...       ...      ...                ...  \n",
+       "209                      headlamps         0        0                  0  \n",
+       "210                      headlamps         0        0                  0  \n",
+       "211                      headlamps         0        0                  0  \n",
+       "212                      headlamps         0        0                  0  \n",
+       "213                      headlamps         0        0                  0  \n",
+       "\n",
+       "[214 rows x 13 columns]"
+      ]
+     },
+     "execution_count": 109,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "windows_subtypes = ['building', 'vehicle', 'nonfloatprocessed']\n",
+    "for subtype in windows_subtypes:\n",
+    "    values = []\n",
+    "    for idx in range(len(df)):\n",
+    "        if subtype in df.Type[idx]:\n",
+    "            values.append(1)\n",
+    "        else:\n",
+    "            values.append(0)\n",
+    "    df[subtype] = values\n",
+    "df"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "pycharm": {
+     "name": "#%% md\n"
+    }
+   },
+   "source": [
+    "# 9. Применив метод ближайшего соседа построить классификаторы типов стекла, в котором признаки - химические признаки, а предсказываемая переменная - типы стекол по стобцам из вопроса №8."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false,
+    "jupyter": {
+     "outputs_hidden": false
+    },
+    "pycharm": {
+     "name": "#%%\n"
+    }
+   },
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.7"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}
